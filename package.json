@@ -1,0 +1,64 @@
+{
+  "name": "volume-app",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Premium Volume Controller for Windows",
+  "author": "Antigravity",
+  "type": "module",
+  "main": "src-electron/main.cjs",
+  "scripts": {
+    "dev": "concurrently \"vite\" \"wait-on http://localhost:5173 && cross-env NODE_ENV=development electron .\"",
+    "build": "vite build",
+    "dist": "npm run build && electron-builder",
+    "lint": "eslint .",
+    "preview": "vite preview",
+    "electron:start": "cross-env NODE_ENV=development electron ."
+  },
+  "build": {
+    "appId": "com.antigravity.volumeapp",
+    "productName": "Volume App",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "src-electron/**/*"
+    ],
+    "win": {
+      "target": "portable",
+      "icon": "src-electron/icon.png"
+    },
+    "asar": true,
+    "npmRebuild": false
+  },
+  "dependencies": {
+    "clsx": "^2.1.1",
+    "framer-motion": "^12.38.0",
+    "loudness": "^0.4.2",
+    "lucide-react": "^1.11.0",
+    "react": "^19.2.5",
+    "react-dom": "^19.2.5",
+    "tailwind-merge": "^3.5.0",
+    "uiohook-napi": "^1.5.5"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@tailwindcss/postcss": "^4.2.4",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.1",
+    "autoprefixer": "^10.5.0",
+    "concurrently": "^9.2.1",
+    "cross-env": "^10.1.0",
+    "electron": "^41.3.0",
+    "electron-builder": "^26.8.1",
+    "eslint": "^10.2.1",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "eslint-plugin-react-refresh": "^0.5.2",
+    "globals": "^17.5.0",
+    "postcss": "^8.5.10",
+    "tailwindcss": "^4.2.4",
+    "vite": "^8.0.10",
+    "wait-on": "^9.0.5"
+  }
+}
