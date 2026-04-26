@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Volume2, VolumeX, Settings, X, Minus, Plus } from 'lucide-react';
+import { Volume2, VolumeX, Settings, X, Minus, Plus, HelpCircle, MousePointer2, MousePointerClick } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 function App() {
   const [volume, setVolume] = useState(50);
   const [isMuted, setIsMuted] = useState(false);
-  const [showSettings, setShowSettings] = useState(false);
+  const [activeView, setActiveView] = useState('osd'); // 'osd', 'settings', 'help'
   const [step, setStep] = useState(2);
 
   useEffect(() => {
@@ -24,15 +24,15 @@ function App() {
       });
 
       window.electronAPI.onOpenSettings(() => {
-        setShowSettings(true);
+        toggleView('settings');
       });
     }
   }, []);
 
-  const toggleSettings = (state) => {
-    setShowSettings(state);
+  const toggleView = (viewName) => {
+    setActiveView(viewName);
     if (window.electronAPI) {
-      if (state) {
+      if (viewName !== 'osd') {
         window.electronAPI.resizeWindow(320, 500);
       } else {
         window.electronAPI.resizeWindow(320, 120);
@@ -51,7 +51,7 @@ function App() {
   return (
     <div className="w-full h-full p-2 flex flex-col items-center justify-center select-none overflow-hidden font-sans text-white">
       <AnimatePresence mode="wait">
-        {!showSettings ? (
+        {activeView === 'osd' && (
           <motion.div 
             key="osd"
             initial={{ opacity: 0, scale: 0.9, y: 10 }}
@@ -83,14 +83,26 @@ function App() {
               </div>
             </div>
 
-            <button 
-              onClick={() => toggleSettings(true)}
-              className="absolute top-1 right-1 p-1 opacity-0 group-hover:opacity-100 transition-opacity text-white/30 hover:text-white"
-            >
-              <Settings size={14} />
-            </button>
+            <div className="absolute top-1 right-1 flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+              <button 
+                onClick={() => toggleView('help')}
+                className="p-1 text-white/30 hover:text-white"
+                title="使い方"
+              >
+                <HelpCircle size={14} />
+              </button>
+              <button 
+                onClick={() => toggleView('settings')}
+                className="p-1 text-white/30 hover:text-white"
+                title="設定"
+              >
+                <Settings size={14} />
+              </button>
+            </div>
           </motion.div>
-        ) : (
+        )}
+
+        {activeView === 'settings' && (
           <motion.div 
             key="settings"
             initial={{ opacity: 0, scale: 0.9, y: 10 }}
@@ -103,7 +115,7 @@ function App() {
                 <Settings size={20} className="text-indigo-400" />
                 SETTINGS
               </h2>
-              <button onClick={() => toggleSettings(false)} className="p-2 hover:bg-white/10 rounded-full transition-colors">
+              <button onClick={() => toggleView('osd')} className="p-2 hover:bg-white/10 rounded-full transition-colors">
                 <X size={18} />
               </button>
             </div>
@@ -130,6 +142,62 @@ function App() {
                   </button>
                 </div>
                 <p className="text-[10px] text-white/30 italic">Determines how much the volume changes per scroll/keypress.</p>
+              </div>
+            </div>
+
+            <div className="pt-4 border-t border-white/10 text-[10px] text-center text-white/20">
+              VOLUME APP • V1.0.0
+            </div>
+          </motion.div>
+        )}
+
+        {activeView === 'help' && (
+          <motion.div 
+            key="help"
+            initial={{ opacity: 0, scale: 0.9, y: 10 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.9, y: 10 }}
+            className="bg-black/90 backdrop-blur-2xl border border-white/20 w-full rounded-2xl p-5 flex flex-col gap-6 shadow-2xl"
+          >
+            <div className="flex justify-between items-center">
+              <h2 className="text-lg font-black tracking-tight flex items-center gap-2">
+                <HelpCircle size={20} className="text-indigo-400" />
+                HOW TO USE
+              </h2>
+              <button onClick={() => toggleView('osd')} className="p-2 hover:bg-white/10 rounded-full transition-colors">
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="space-y-6">
+              <div className="flex gap-4 items-start">
+                <div className="p-2 bg-indigo-500/20 rounded-lg text-indigo-400">
+                  <MousePointer2 size={24} />
+                </div>
+                <div>
+                  <h3 className="text-xs font-bold text-white/80">音量調整</h3>
+                  <p className="text-[11px] text-white/40 mt-1">タスクバーの上でマウスホイールを回転させると音量を調整できます。</p>
+                </div>
+              </div>
+
+              <div className="flex gap-4 items-start">
+                <div className="p-2 bg-purple-500/20 rounded-lg text-purple-400">
+                  <MousePointerClick size={24} />
+                </div>
+                <div>
+                  <h3 className="text-xs font-bold text-white/80">ミュート切り替え</h3>
+                  <p className="text-[11px] text-white/40 mt-1">タスクバーの上でマウスホイールをクリック（中クリック）するとミュートを切り替えます。</p>
+                </div>
+              </div>
+
+              <div className="flex gap-4 items-start">
+                <div className="p-2 bg-pink-500/20 rounded-lg text-pink-400">
+                  <Settings size={24} />
+                </div>
+                <div>
+                  <h3 className="text-xs font-bold text-white/80">ステップ数の変更</h3>
+                  <p className="text-[11px] text-white/40 mt-1">設定画面から、一度の操作で変化する音量の幅（1%〜10%）を変更できます。</p>
+                </div>
               </div>
             </div>
 
