@@ -13,7 +13,7 @@ function App() {
       window.electronAPI.getVolume().then(v => setVolume(Math.round(v)));
       window.electronAPI.getMute().then(m => setIsMuted(m));
       window.electronAPI.getSettings().then(s => setStep(s.step || 2));
-      
+
       window.electronAPI.onVolumeUpdated((newVolume) => {
         setVolume(newVolume);
         setIsMuted(false);
@@ -52,7 +52,7 @@ function App() {
     <div className="w-full h-full p-2 flex flex-col items-center justify-center select-none overflow-hidden font-sans text-white">
       <AnimatePresence mode="wait">
         {activeView === 'osd' && (
-          <motion.div 
+          <motion.div
             key="osd"
             initial={{ opacity: 0, scale: 0.9, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -64,9 +64,9 @@ function App() {
             <div className={`p-2 rounded-xl shadow-[0_0_15px_rgba(99,102,241,0.5)] transition-colors ${isMuted ? 'bg-red-500' : 'bg-indigo-500'}`}>
               {isMuted ? <VolumeX size={24} /> : <Volume2 size={24} />}
             </div>
-            
+
             <div className="flex-1 flex flex-col gap-2">
-              <div className="flex justify-between items-end">
+              <div className="flex items-end gap-3">
                 <span className={`text-[10px] font-black tracking-[0.2em] ${isMuted ? 'text-red-500' : 'text-indigo-400'}`}>
                   {isMuted ? 'MUTED' : 'SYSTEM VOLUME'}
                 </span>
@@ -74,9 +74,9 @@ function App() {
                   {isMuted ? 'OFF' : `${volume}%`}
                 </span>
               </div>
-              
+
               <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
-                <motion.div 
+                <motion.div
                   className={`h-full transition-colors ${isMuted ? 'bg-red-500/50' : 'bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500'}`}
                   initial={false}
                   animate={{ width: isMuted ? '0%' : `${volume}%` }}
@@ -85,15 +85,15 @@ function App() {
               </div>
             </div>
 
-            <div className="absolute top-1 right-1 flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-              <button 
+            <div className="absolute top-0 right-2 flex gap-0.5">
+              <button
                 onClick={() => toggleView('help')}
                 className="p-1 text-white/30 hover:text-white"
                 title="使い方"
               >
                 <HelpCircle size={14} />
               </button>
-              <button 
+              <button
                 onClick={() => toggleView('settings')}
                 className="p-1 text-white/30 hover:text-white"
                 title="設定"
@@ -105,7 +105,7 @@ function App() {
         )}
 
         {activeView === 'settings' && (
-          <motion.div 
+          <motion.div
             key="settings"
             initial={{ opacity: 0, scale: 0.9, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -126,7 +126,7 @@ function App() {
               <div className="flex flex-col gap-2">
                 <label className="text-[10px] font-bold text-white/40 tracking-widest uppercase">Volume Step Size</label>
                 <div className="flex items-center gap-4 bg-white/5 p-3 rounded-xl border border-white/10">
-                  <button 
+                  <button
                     onClick={() => updateStep(step - 1)}
                     className="p-2 hover:bg-white/10 rounded-lg transition-colors text-indigo-400"
                   >
@@ -136,7 +136,7 @@ function App() {
                     <span className="text-3xl font-black tabular-nums">{step}</span>
                     <span className="text-xs text-white/40 ml-1">%</span>
                   </div>
-                  <button 
+                  <button
                     onClick={() => updateStep(step + 1)}
                     className="p-2 hover:bg-white/10 rounded-lg transition-colors text-indigo-400"
                   >
@@ -154,7 +154,7 @@ function App() {
         )}
 
         {activeView === 'help' && (
-          <motion.div 
+          <motion.div
             key="help"
             initial={{ opacity: 0, scale: 0.9, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
