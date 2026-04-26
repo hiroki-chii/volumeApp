@@ -58,6 +58,8 @@ function App() {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: -10 }}
             className="bg-black/80 backdrop-blur-xl border border-white/20 w-full h-20 rounded-2xl p-4 flex items-center gap-4 shadow-[0_0_30px_rgba(0,0,0,0.5)] relative group"
+            onMouseEnter={() => window.electronAPI.setHover(true)}
+            onMouseLeave={() => window.electronAPI.setHover(false)}
           >
             <div className={`p-2 rounded-xl shadow-[0_0_15px_rgba(99,102,241,0.5)] transition-colors ${isMuted ? 'bg-red-500' : 'bg-indigo-500'}`}>
               {isMuted ? <VolumeX size={24} /> : <Volume2 size={24} />}

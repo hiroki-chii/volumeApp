@@ -11,4 +11,5 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getSettings: () => ipcRenderer.invoke('get-settings'),
   setSetting: (key, value) => ipcRenderer.invoke('set-setting', key, value),
   resizeWindow: (w, h) => ipcRenderer.send('resize-window', w, h),
+  setHover: (isHovering) => ipcRenderer.send('set-hover', isHovering),
 });

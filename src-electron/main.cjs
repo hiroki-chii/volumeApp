@@ -33,6 +33,7 @@ let win;
 let tray;
 let hideTimer;
 let isSettingsMode = false;
+let isHovering = false;
 
 function isMouseOverTaskbar() {
   const point = screen.getCursorScreenPoint();
@@ -74,9 +75,14 @@ function showOSD() {
   if (!win.isVisible()) {
     win.showInactive();
   }
+  resetHideTimer();
+}
+
+function resetHideTimer() {
   if (hideTimer) clearTimeout(hideTimer);
   hideTimer = setTimeout(() => {
-    if (!isSettingsMode) win.hide();
+    if (isHovering || isSettingsMode) return;
+    win.hide();
   }, 2000);
 }
 
@@ -180,6 +186,13 @@ ipcMain.handle('get-settings', () => store.data);
 ipcMain.handle('set-setting', (e, key, value) => {
   store.set(key, value);
   return store.data;
+});
+
+ipcMain.on('set-hover', (e, hover) => {
+  isHovering = hover;
+  if (!isHovering && !isSettingsMode && win && win.isVisible()) {
+    resetHideTimer();
+  }
 });
 
 ipcMain.on('resize-window', (e, width, height) => {
