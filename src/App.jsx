@@ -68,7 +68,7 @@ function App() {
             <div className="flex-1 flex flex-col gap-2">
               <div className="flex items-end gap-3">
                 <span className={`text-[10px] font-black tracking-[0.2em] ${isMuted ? 'text-red-500' : 'text-indigo-400'}`}>
-                  {isMuted ? 'MUTED' : 'SYSTEM VOLUME'}
+                  {isMuted ? 'MUTED' : 'Volume App'}
                 </span>
                 <span className={`text-2xl font-black tabular-nums transition-colors ${isMuted ? 'text-red-500' : 'text-white'}`}>
                   {isMuted ? 'OFF' : `${volume}%`}
