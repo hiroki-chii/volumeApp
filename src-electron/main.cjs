@@ -37,9 +37,24 @@ let isHovering = false;
 
 function isMouseOverTaskbar() {
   const point = screen.getCursorScreenPoint();
-  const primaryDisplay = screen.getPrimaryDisplay();
-  const { height: workHeight } = primaryDisplay.workAreaSize;
-  return point.y >= workHeight;
+  const display = screen.getDisplayNearestPoint(point);
+  const b = display.bounds;
+  const w = display.workArea;
+
+  // カーソルがディスプレイの範囲内にあるか確認
+  const isInBounds = (
+    point.x >= b.x && point.x < b.x + b.width &&
+    point.y >= b.y && point.y < b.y + b.height
+  );
+  if (!isInBounds) return false;
+
+  // ワークエリア（タスクバーを除いた領域）の外側にいるか確認（＝タスクバー上）
+  const isInWorkArea = (
+    point.x >= w.x && point.x < w.x + w.width &&
+    point.y >= w.y && point.y < w.y + w.height
+  );
+
+  return !isInWorkArea;
 }
 
 function createWindow() {
@@ -72,8 +87,29 @@ function createWindow() {
 
 function showOSD() {
   if (!win || isSettingsMode) return;
+
+  // マウスのあるディスプレイにOSDを移動
+  const point = screen.getCursorScreenPoint();
+  const display = screen.getDisplayNearestPoint(point);
+  const { x, y, width, height } = display.workArea;
+  
+  const winWidth = 320;
+  const winHeight = 120;
+  
+  const bounds = {
+    width: winWidth,
+    height: winHeight,
+    x: x + width - winWidth - 20,
+    y: y + height - winHeight - 20
+  };
+  
+  win.setBounds(bounds);
+
   if (!win.isVisible()) {
     win.showInactive();
+    // 高DPIモニターでの初回表示時にウィンドウが欠ける問題を回避
+    // 表示後に再度boundsを適用することで描画領域を確定させる
+    win.setBounds(bounds);
   }
   resetHideTimer();
 }
@@ -88,11 +124,14 @@ function resetHideTimer() {
 
 function adjustWindowSize(width, height) {
   if (!win) return;
-  const primaryDisplay = screen.getPrimaryDisplay();
-  const { height: screenHeight, width: screenWidth } = primaryDisplay.workAreaSize;
   
-  const newX = screenWidth - width - 20;
-  const newY = screenHeight - height - 20;
+  // 現在のウィンドウがある（またはマウスがある）ディスプレイを取得
+  const point = screen.getCursorScreenPoint();
+  const display = screen.getDisplayNearestPoint(point);
+  const { x: sx, y: sy, width: sw, height: sh } = display.workArea;
+  
+  const newX = sx + sw - width - 20;
+  const newY = sy + sh - height - 20;
   
   win.setBounds({
     width: width,
