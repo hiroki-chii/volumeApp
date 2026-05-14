@@ -76,6 +76,8 @@ function createWindow() {
     alwaysOnTop: true,
     skipTaskbar: true,
     show: false,
+    resizable: false,
+    maximizable: false,
   });
 
   if (isDev) {
@@ -83,6 +85,14 @@ function createWindow() {
   } else {
     win.loadFile(path.join(__dirname, '../dist/index.html'));
   }
+
+  win.on('blur', () => {
+    if (isSettingsMode) {
+      win.hide();
+      isSettingsMode = false;
+      win.webContents.send('force-osd');
+    }
+  });
 }
 
 function showOSD() {

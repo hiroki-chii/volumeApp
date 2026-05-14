@@ -26,6 +26,9 @@ function App() {
       window.electronAPI.onOpenSettings(() => {
         toggleView('settings');
       });
+      window.electronAPI.onForceOSD(() => {
+        setActiveView('osd');
+      });
     }
   }, []);
 
@@ -57,7 +60,7 @@ function App() {
             initial={{ opacity: 0, scale: 0.9, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: -10 }}
-            className="bg-black/80 backdrop-blur-xl border border-white/20 w-full h-20 rounded-2xl p-4 flex items-center gap-4 shadow-[0_0_30px_rgba(0,0,0,0.5)] relative group"
+            className="bg-black/80 backdrop-blur-xl border border-white/20 w-[300px] h-20 rounded-2xl p-4 flex items-center gap-4 shadow-[0_0_30px_rgba(0,0,0,0.5)] relative group"
             onMouseEnter={() => window.electronAPI.setHover(true)}
             onMouseLeave={() => window.electronAPI.setHover(false)}
           >
@@ -70,7 +73,7 @@ function App() {
                 <span className={`text-[10px] font-black tracking-[0.2em] ${isMuted ? 'text-red-500' : 'text-indigo-400'}`}>
                   {isMuted ? 'MUTED' : 'Volume App'}
                 </span>
-                <span className={`text-2xl font-black tabular-nums transition-colors ${isMuted ? 'text-red-500' : 'text-white'}`}>
+                <span className={`text-2xl font-black tabular-nums transition-colors inline-block w-16 text-right ${isMuted ? 'text-red-500' : 'text-white'}`}>
                   {isMuted ? 'OFF' : `${volume}%`}
                 </span>
               </div>
