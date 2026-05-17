@@ -96,7 +96,14 @@ function createWindow() {
 }
 
 function showOSD() {
-  if (!win || isSettingsMode) return;
+  if (!win) return;
+
+  // 設定モードのまま音量操作された場合、強制的にOSDモードに切り替える（状態の不整合を防ぐ）
+  if (isSettingsMode) {
+    isSettingsMode = false;
+    adjustWindowSize(320, 120);
+    win.webContents.send('force-osd');
+  }
 
   // マウスのあるディスプレイにOSDを移動
   const point = screen.getCursorScreenPoint();
@@ -115,12 +122,20 @@ function showOSD() {
   
   win.setBounds(bounds);
 
-  if (!win.isVisible()) {
-    win.showInactive();
-    // 高DPIモニターでの初回表示時にウィンドウが欠ける問題を回避
-    // 表示後に再度boundsを適用することで描画領域を確定させる
-    win.setBounds(bounds);
+  // 常に最前面に維持し、他のウィンドウの背後に隠れるのを防ぐ
+  win.setAlwaysOnTop(true, 'screen-saver');
+
+  // isVisibleの真偽値に関わらず、毎回showInactiveを呼んで表示状態を確実にする
+  win.showInactive();
+  
+  // 高DPIモニターでの初回表示時の欠け対策、および表示確定のための再setBounds
+  win.setBounds(bounds);
+
+  // 透明ウィンドウの描画が更新されないChromiumのバグを回避するため、強制的に再描画を要求
+  if (win.webContents) {
+    win.webContents.invalidate();
   }
+
   resetHideTimer();
 }
 
