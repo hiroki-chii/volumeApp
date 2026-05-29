@@ -1,4 +1,9 @@
 const { app, BrowserWindow, ipcMain, globalShortcut, Tray, Menu, screen } = require('electron');
+
+// Windowsアップデート後のクラッシュ（GPUやサンドボックスの競合）対策
+app.commandLine.appendSwitch('disable-gpu');
+app.commandLine.appendSwitch('no-sandbox');
+
 const path = require('path');
 const fs = require('fs');
 const isDev = process.env.NODE_ENV === 'development';

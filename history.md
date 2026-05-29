@@ -84,3 +84,12 @@
     - 表示の都度 `win.setAlwaysOnTop(true, 'screen-saver')` を再適用し、他ウィンドウやタスクバーの背後に隠れるのを防止。
     - `win.webContents.invalidate()` を追加し、透明ウィンドウが再表示された際に描画が更新されないChromiumのバグを回避。
     - 設定モード中にタスクバーでスクロール操作された場合、自動的に設定画面を閉じて OSD モードに移行する自己修復ロジックを `showOSD()` 内に実装。これにより状態の不整合を完全に排除し、直感的なUXを提供。
+
+## 2026-05-29 09:25
+- 上書きビルド用コマンドの問い合わせに対応。
+  - `dist` および `release` ディレクトリを事前にクリアした上で `npm run dist` を実行するコマンドを提示。
+
+## 2026-05-29 09:32
+- Windowsアップデート後にアプリが起動直後にクラッシュする不具合への暫定対策を実装。
+  - 原因：Windowsアップデートに伴うGPUドライバやExploit Protection等のセキュリティ設定とChromiumのサンドボックス/GPUアクセラレーションの競合。
+  - 対策：`src-electron/main.cjs` の初期化プロセスに、`app.commandLine.appendSwitch('disable-gpu')` および `app.commandLine.appendSwitch('no-sandbox')` を追加。これにより、起動オプションを手動で付与しなくてもアプリが安全に起動できるように改善。
