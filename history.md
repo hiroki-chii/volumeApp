@@ -93,3 +93,7 @@
 - Windowsアップデート後にアプリが起動直後にクラッシュする不具合への暫定対策を実装。
   - 原因：Windowsアップデートに伴うGPUドライバやExploit Protection等のセキュリティ設定とChromiumのサンドボックス/GPUアクセラレーションの競合。
   - 対策：`src-electron/main.cjs` の初期化プロセスに、`app.commandLine.appendSwitch('disable-gpu')` および `app.commandLine.appendSwitch('no-sandbox')` を追加。これにより、起動オプションを手動で付与しなくてもアプリが安全に起動できるように改善。
+
+## 2026-05-29 09:47
+- 上書きビルド用コマンドの問い合わせに対応。
+  - フロントエンドのビルドとElectronのビルドを連続して行うための上書きビルドコマンド（`npm run build:frontend && npx electron-builder --win`）を案内。
