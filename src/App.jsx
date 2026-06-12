@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Volume2, VolumeX, Settings, X, Minus, Plus, HelpCircle, MousePointer2, MousePointerClick } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -7,6 +7,9 @@ function App() {
   const [isMuted, setIsMuted] = useState(false);
   const [activeView, setActiveView] = useState('osd'); // 'osd', 'settings', 'help'
   const [step, setStep] = useState(2);
+  const [isHovered, setIsHovered] = useState(false);
+
+  const barRef = useRef(null);
 
   useEffect(() => {
     if (window.electronAPI) {
@@ -31,6 +34,33 @@ function App() {
       });
     }
   }, []);
+
+  const handleVolumeChange = (clientX) => {
+    if (!barRef.current) return;
+    const rect = barRef.current.getBoundingClientRect();
+    const width = rect.width;
+    let offsetX = clientX - rect.left;
+    offsetX = Math.max(0, Math.min(width, offsetX));
+    const newVolume = Math.round((offsetX / width) * 100);
+
+    setVolume(newVolume);
+    if (window.electronAPI) {
+      window.electronAPI.setVolume(newVolume);
+    }
+  };
+
+  const handleMouseDown = (e) => {
+    if (e.button !== 0) return; // 左クリックのみ
+
+    if (isMuted) {
+      setIsMuted(false);
+      if (window.electronAPI) {
+        window.electronAPI.setMute(false);
+      }
+    }
+
+    handleVolumeChange(e.clientX);
+  };
 
   const toggleView = (viewName) => {
     setActiveView(viewName);
@@ -61,8 +91,14 @@ function App() {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: -10 }}
             className="bg-black/80 backdrop-blur-xl border border-white/20 w-[300px] h-20 rounded-2xl p-4 flex items-center gap-4 shadow-[0_0_30px_rgba(0,0,0,0.5)] relative group"
-            onMouseEnter={() => window.electronAPI.setHover(true)}
-            onMouseLeave={() => window.electronAPI.setHover(false)}
+            onMouseEnter={() => {
+              setIsHovered(true);
+              if (window.electronAPI) window.electronAPI.setHover(true);
+            }}
+            onMouseLeave={() => {
+              setIsHovered(false);
+              if (window.electronAPI) window.electronAPI.setHover(false);
+            }}
           >
             <div className={`p-2 rounded-xl shadow-[0_0_15px_rgba(99,102,241,0.5)] transition-colors ${isMuted ? 'bg-red-500' : 'bg-indigo-500'}`}>
               {isMuted ? <VolumeX size={24} /> : <Volume2 size={24} />}
@@ -78,13 +114,24 @@ function App() {
                 </span>
               </div>
 
-              <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
-                <motion.div
-                  className={`h-full transition-colors ${isMuted ? 'bg-red-500/50' : 'bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500'}`}
-                  initial={false}
-                  animate={{ width: isMuted ? '0%' : `${volume}%` }}
-                  transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-                />
+              {/* クリックを受け取るための、高さを持たせた親コンテナ */}
+              <div
+                ref={barRef}
+                onMouseDown={handleMouseDown}
+                className="w-full h-5 flex items-center cursor-pointer group/slider"
+              >
+                {/* トラック（背景の細いバー） */}
+                <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden transition-colors group-hover/slider:bg-white/20">
+                  {/* 進捗バー */}
+                  <div
+                    className={`h-full rounded-full ${
+                      isMuted
+                        ? 'bg-red-500/50'
+                        : 'bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500'
+                    }`}
+                    style={{ width: isMuted ? '0%' : `${volume}%` }}
+                  />
+                </div>
               </div>
             </div>
 
@@ -181,7 +228,7 @@ function App() {
                 </div>
                 <div>
                   <h3 className="text-xs font-bold text-white/80">音量調整</h3>
-                  <p className="text-[11px] text-white/40 mt-1">タスクバーの上でマウスホイールを回転させると音量を調整できます。</p>
+                  <p className="text-[11px] text-white/40 mt-1">タスクバーの上でマウスホイールを回転するか、音量バーをクリックして調整できます。</p>
                 </div>
               </div>
 
