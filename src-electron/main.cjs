@@ -178,7 +178,7 @@ function resetHideTimer() {
   hideTimer = setTimeout(() => {
     if (isHovering || isSettingsMode) return;
     win.hide();
-  }, 2000);
+  }, 1500);
 }
 
 function adjustWindowSize(width, height) {
