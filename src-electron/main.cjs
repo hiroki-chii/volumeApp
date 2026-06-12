@@ -39,6 +39,35 @@ let tray;
 let hideTimer;
 let isSettingsMode = false;
 let isHovering = false;
+let currentVolume = 50;
+let currentMuted = false;
+let isApplying = false;
+let pendingState = null;
+
+async function applyAudioState(volume, muted) {
+  if (isApplying) {
+    pendingState = { volume, muted };
+    return;
+  }
+  isApplying = true;
+  try {
+    if (muted) {
+      await loudness.setMuted(true);
+    } else {
+      await loudness.setVolume(volume);
+      await loudness.setMuted(false);
+    }
+  } catch (e) {
+    console.error('Failed to apply audio state:', e);
+  }
+  isApplying = false;
+  
+  if (pendingState !== null) {
+    const nextState = pendingState;
+    pendingState = null;
+    await applyAudioState(nextState.volume, nextState.muted);
+  }
+}
 
 function isMouseOverTaskbar() {
   const point = screen.getCursorScreenPoint();
@@ -191,6 +220,15 @@ async function setVolume(vol) {
 
 app.whenReady().then(async () => {
   store = new SimpleStore();
+
+  // 起動時にOSの音量とミュート状態を取得してキャッシュを初期化
+  try {
+    currentVolume = await loudness.getVolume();
+    currentMuted = await loudness.getMuted();
+  } catch (e) {
+    console.error('Failed to initialize audio cache:', e);
+  }
+
   createWindow();
 
   try {
@@ -217,40 +255,71 @@ app.whenReady().then(async () => {
   console.log('Keyboard shortcuts disabled. Use mouse over taskbar.');
 
   // Mouse
-  uIOhook.on('wheel', async (e) => {
+  uIOhook.on('wheel', (e) => {
     if (isMouseOverTaskbar()) {
-      let current = await getVolume();
       const step = store.get('step', 2);
       let next;
       if (e.rotation < 0) {
-        next = Math.min(100, Math.round(current / step) * step + step);
+        next = Math.min(100, Math.round(currentVolume / step) * step + step);
       } else {
-        next = Math.max(0, Math.round(current / step) * step - step);
+        next = Math.max(0, Math.round(currentVolume / step) * step - step);
       }
-      await setVolume(next);
-      await loudness.setMuted(false);
-      win.webContents.send('volume-updated', next);
-      win.webContents.send('mute-updated', false);
+      
+      currentVolume = next;
+      currentMuted = false;
+
+      // UIを即座に更新して表示（非ブロッキング）
+      win.webContents.send('volume-updated', currentVolume);
+      win.webContents.send('mute-updated', currentMuted);
       showOSD();
+
+      // バックグラウンドでOSの音量を適用（直列）
+      applyAudioState(currentVolume, currentMuted);
     }
   });
 
-  uIOhook.on('mousedown', async (e) => {
+  uIOhook.on('mousedown', (e) => {
     if (e.button === 3 && isMouseOverTaskbar()) {
-      const isMuted = await loudness.getMuted();
-      await loudness.setMuted(!isMuted);
-      win.webContents.send('mute-updated', !isMuted);
+      currentMuted = !currentMuted;
+      
+      // UIを即座に更新して表示（非ブロッキング）
+      win.webContents.send('mute-updated', currentMuted);
       showOSD();
+
+      // バックグラウンドでOSのミュート状態を適用（直列）
+      applyAudioState(currentVolume, currentMuted);
     }
   });
 
   uIOhook.start();
 });
 
-ipcMain.handle('get-volume', async () => await getVolume());
-ipcMain.handle('set-volume', async (e, v) => await setVolume(v));
-ipcMain.handle('get-mute', async () => await loudness.getMuted());
-ipcMain.handle('set-mute', async (e, m) => await loudness.setMuted(m));
+ipcMain.handle('get-volume', async () => {
+  try {
+    currentVolume = await loudness.getVolume();
+  } catch (e) {
+    console.error(e);
+  }
+  return currentVolume;
+});
+ipcMain.handle('set-volume', async (e, v) => {
+  currentVolume = v;
+  applyAudioState(currentVolume, currentMuted);
+  return true;
+});
+ipcMain.handle('get-mute', async () => {
+  try {
+    currentMuted = await loudness.getMuted();
+  } catch (e) {
+    console.error(e);
+  }
+  return currentMuted;
+});
+ipcMain.handle('set-mute', async (e, m) => {
+  currentMuted = m;
+  applyAudioState(currentVolume, currentMuted);
+  return true;
+});
 ipcMain.handle('get-settings', () => store.data);
 ipcMain.handle('set-setting', (e, key, value) => {
   store.set(key, value);
