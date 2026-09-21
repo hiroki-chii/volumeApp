@@ -47,6 +47,7 @@ const OSD_HEIGHT: i32 = 80;
 const PANEL_WIDTH: i32 = 320;
 const PANEL_HEIGHT: i32 = 280;
 const EDGE_MARGIN: i32 = 20;
+const OSD_BOTTOM_MARGIN: i32 = 0;
 const HIDE_DELAY: Duration = Duration::from_millis(1500);
 
 static HOOK_APP: OnceLock<AppHandle> = OnceLock::new();
@@ -209,9 +210,14 @@ fn set_window_bounds(
     };
     let work = info.rcWork;
     let scale = monitor_scale(point);
-    let margin = EDGE_MARGIN as f64;
-    let x = work.right as f64 / scale - width as f64 - margin;
-    let y = work.bottom as f64 / scale - height as f64 - margin;
+    let horizontal_margin = EDGE_MARGIN as f64;
+    let bottom_margin = if width == OSD_WIDTH && height == OSD_HEIGHT {
+        OSD_BOTTOM_MARGIN as f64
+    } else {
+        EDGE_MARGIN as f64
+    };
+    let x = work.right as f64 / scale - width as f64 - horizontal_margin;
+    let y = work.bottom as f64 / scale - height as f64 - bottom_margin;
     // Re-apply these flags on every resize/show cycle. Windows can restore the native
     // non-client frame after a DPI or monitor transition even when the initial config is frameless.
     window
