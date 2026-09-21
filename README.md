@@ -1,16 +1,31 @@
-# React + Vite
+# Volume App
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Windowsのタスクバー上でマウスホイールを操作し、システム音量を調整するTauri 2アプリです。
 
-Currently, two official plugins are available:
+## 開発
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+```powershell
+npm install
+npm run dev
+```
 
-## React Compiler
+## 配布用ビルド
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+```powershell
+# WebView2 Runtimeを利用するポータブル実行ファイル
+npm run dist
 
-## Expanding the ESLint configuration
+# NSISインストーラー
+npm run bundle
+```
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+`npm run dist` の成果物は `src-tauri/target/release/volume-app.exe` に生成されます。
+
+## 操作
+
+- タスクバー上でマウスホイール: 音量調整
+- タスクバー上で中クリック: ミュート切り替え
+- トレイメニュー: 設定表示・終了
+- OSDの音量バー: クリックした位置へ音量を変更
+
+設定した音量ステップはTauriのアプリ設定ディレクトリへ保存します。初回起動時は、既存Electron版の `%APPDATA%\\volume-app\\settings.json` があれば読み込みます。

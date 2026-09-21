@@ -1,38 +1,41 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Volume2, VolumeX, Settings, X, Minus, Plus, HelpCircle, MousePointer2, MousePointerClick } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { volumeApi } from './tauri';
 
 function App() {
+  const OSD_SIZE = { width: 300, height: 80 };
+  const SETTINGS_SIZE = { width: 320, height: 280 };
+  const HELP_SIZE = { width: 320, height: 380 };
   const [volume, setVolume] = useState(50);
   const [isMuted, setIsMuted] = useState(false);
   const [activeView, setActiveView] = useState('osd'); // 'osd', 'settings', 'help'
   const [step, setStep] = useState(2);
-  const [isHovered, setIsHovered] = useState(false);
 
   const barRef = useRef(null);
 
   useEffect(() => {
-    if (window.electronAPI) {
-      window.electronAPI.getVolume().then(v => setVolume(Math.round(v)));
-      window.electronAPI.getMute().then(m => setIsMuted(m));
-      window.electronAPI.getSettings().then(s => setStep(s.step || 2));
+    const unlisten = [];
+    volumeApi.getVolume().then(v => setVolume(Math.round(v)));
+    volumeApi.getMute().then(m => setIsMuted(m));
+    volumeApi.getSettings().then(s => setStep(s.step || 2));
 
-      window.electronAPI.onVolumeUpdated((newVolume) => {
+    volumeApi.onVolumeUpdated((newVolume) => {
         setVolume(newVolume);
         setIsMuted(false);
-      });
+      }).then(unsubscribe => unlisten.push(unsubscribe));
 
-      window.electronAPI.onMuteUpdated((muteState) => {
+    volumeApi.onMuteUpdated((muteState) => {
         setIsMuted(muteState);
-      });
+      }).then(unsubscribe => unlisten.push(unsubscribe));
 
-      window.electronAPI.onOpenSettings(() => {
+    volumeApi.onOpenSettings(() => {
         toggleView('settings');
-      });
-      window.electronAPI.onForceOSD(() => {
+      }).then(unsubscribe => unlisten.push(unsubscribe));
+    volumeApi.onForceOSD(() => {
         setActiveView('osd');
-      });
-    }
+      }).then(unsubscribe => unlisten.push(unsubscribe));
+
+    return () => unlisten.forEach(unsubscribe => unsubscribe());
   }, []);
 
   const handleVolumeChange = (clientX) => {
@@ -44,9 +47,7 @@ function App() {
     const newVolume = Math.round((offsetX / width) * 100);
 
     setVolume(newVolume);
-    if (window.electronAPI) {
-      window.electronAPI.setVolume(newVolume);
-    }
+    volumeApi.setVolume(newVolume);
   };
 
   const handleMouseDown = (e) => {
@@ -54,50 +55,37 @@ function App() {
 
     if (isMuted) {
       setIsMuted(false);
-      if (window.electronAPI) {
-        window.electronAPI.setMute(false);
-      }
+      volumeApi.setMute(false);
     }
 
     handleVolumeChange(e.clientX);
   };
 
-  const toggleView = (viewName) => {
+  function toggleView(viewName) {
     setActiveView(viewName);
-    if (window.electronAPI) {
-      if (viewName !== 'osd') {
-        window.electronAPI.resizeWindow(320, 500);
-      } else {
-        window.electronAPI.resizeWindow(320, 120);
-      }
-    }
-  };
+    const size = viewName === 'osd'
+      ? OSD_SIZE
+      : viewName === 'help' ? HELP_SIZE : SETTINGS_SIZE;
+    volumeApi.resizeWindow(size.width, size.height);
+  }
 
   const updateStep = (newStep) => {
     const s = Math.max(1, Math.min(10, newStep));
     setStep(s);
-    if (window.electronAPI) {
-      window.electronAPI.setSetting('step', s);
-    }
+    volumeApi.setSetting('step', s);
   };
 
   return (
-    <div className="w-full h-full p-2 flex flex-col items-center justify-center select-none overflow-hidden font-sans text-white">
-      <AnimatePresence mode="wait">
+    <div className="relative w-full h-full select-none overflow-hidden font-sans text-white">
+      <>
         {activeView === 'osd' && (
-          <motion.div
-            key="osd"
-            initial={{ opacity: 0, scale: 0.9, y: 10 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.9, y: -10 }}
-            className="bg-black/80 backdrop-blur-xl border border-white/20 w-[300px] h-20 rounded-2xl p-4 flex items-center gap-4 shadow-[0_0_30px_rgba(0,0,0,0.5)] relative group"
+          <div
+            className="absolute inset-0 bg-black/80 backdrop-blur-xl rounded-2xl p-4 flex items-center gap-4 shadow-[0_0_30px_rgba(0,0,0,0.5)] relative group"
             onMouseEnter={() => {
-              setIsHovered(true);
-              if (window.electronAPI) window.electronAPI.setHover(true);
+              volumeApi.setHover(true);
             }}
             onMouseLeave={() => {
-              setIsHovered(false);
-              if (window.electronAPI) window.electronAPI.setHover(false);
+              volumeApi.setHover(false);
             }}
           >
             <div className={`p-2 rounded-xl shadow-[0_0_15px_rgba(99,102,241,0.5)] transition-colors ${isMuted ? 'bg-red-500' : 'bg-indigo-500'}`}>
@@ -151,16 +139,12 @@ function App() {
                 <Settings size={14} />
               </button>
             </div>
-          </motion.div>
+          </div>
         )}
 
         {activeView === 'settings' && (
-          <motion.div
-            key="settings"
-            initial={{ opacity: 0, scale: 0.9, y: 10 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.9, y: 10 }}
-            className="bg-black/90 backdrop-blur-2xl border border-white/20 w-full rounded-2xl p-5 flex flex-col gap-6 shadow-2xl"
+          <div
+            className="absolute inset-0 bg-black/90 backdrop-blur-2xl rounded-2xl p-5 flex flex-col gap-6 shadow-2xl"
           >
             <div className="flex justify-between items-center">
               <h2 className="text-lg font-black tracking-tight flex items-center gap-2">
@@ -200,16 +184,12 @@ function App() {
             <div className="pt-4 border-t border-white/10 text-[10px] text-center text-white/20">
               VOLUME APP • V1.0.0
             </div>
-          </motion.div>
+          </div>
         )}
 
         {activeView === 'help' && (
-          <motion.div
-            key="help"
-            initial={{ opacity: 0, scale: 0.9, y: 10 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.9, y: 10 }}
-            className="bg-black/90 backdrop-blur-2xl border border-white/20 w-full rounded-2xl p-5 flex flex-col gap-6 shadow-2xl"
+          <div
+            className="absolute inset-0 bg-black/90 backdrop-blur-2xl rounded-2xl p-5 flex flex-col gap-6 shadow-2xl"
           >
             <div className="flex justify-between items-center">
               <h2 className="text-lg font-black tracking-tight flex items-center gap-2">
@@ -256,9 +236,9 @@ function App() {
             <div className="pt-4 border-t border-white/10 text-[10px] text-center text-white/20">
               VOLUME APP • V1.0.0
             </div>
-          </motion.div>
+          </div>
         )}
-      </AnimatePresence>
+      </>
     </div>
   );
 }
