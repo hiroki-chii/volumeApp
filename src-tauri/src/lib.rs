@@ -14,7 +14,7 @@ use serde::{Deserialize, Serialize};
 use tauri::{
     menu::{Menu, MenuItem, PredefinedMenuItem},
     tray::TrayIconBuilder,
-    AppHandle, Emitter, LogicalPosition, LogicalSize, Manager, State, WebviewWindow,
+    AppHandle, Emitter, Manager, PhysicalPosition, PhysicalSize, State, WebviewWindow,
     WindowEvent,
 };
 use windows::{
@@ -216,8 +216,6 @@ fn set_window_bounds(
     } else {
         EDGE_MARGIN as f64
     };
-    let x = work.right as f64 / scale - width as f64 - horizontal_margin;
-    let y = work.bottom as f64 / scale - height as f64 - bottom_margin;
     // Re-apply these flags on every resize/show cycle. Windows can restore the native
     // non-client frame after a DPI or monitor transition even when the initial config is frameless.
     window
@@ -226,18 +224,25 @@ fn set_window_bounds(
     window
         .set_shadow(false)
         .map_err(|error| error.to_string())?;
+    // Monitor bounds and window placement use physical desktop pixels. Size the window
+    // using the target monitor's DPI so moving from another monitor cannot leave the
+    // placement calculation based on the previous monitor's scale.
+    let physical_width = (width as f64 * scale).round() as u32;
+    let physical_height = (height as f64 * scale).round() as u32;
+    let physical_size = PhysicalSize::new(physical_width, physical_height);
     window
-        .set_size(LogicalSize::new(width as f64, height as f64))
+        .set_size(physical_size)
         .map_err(|error| error.to_string())?;
+    let x = work.right - physical_size.width as i32 - (horizontal_margin * scale).round() as i32;
+    let y = work.bottom - physical_size.height as i32 - (bottom_margin * scale).round() as i32;
     window
-        .set_position(LogicalPosition::new(x, y))
+        .set_position(PhysicalPosition::new(x, y))
         .map_err(|error| error.to_string())?;
 
     // The transparent window is rectangular by default, which leaves visible transparent
     // pixels at the four corners of the rounded OSD card. Clip the native window to the same
     // rounded shape so the window boundary and the rendered card are identical.
     let hwnd = window.hwnd().map_err(|error| error.to_string())?;
-    let physical_size = window.inner_size().map_err(|error| error.to_string())?;
     let radius = (16.0 * scale).round() as i32;
     unsafe {
         let region = CreateRoundRectRgn(
